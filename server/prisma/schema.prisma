@@ -1,0 +1,19 @@
+// users Table:
+
+// Fields:
+// username: stores the username.
+// password: stores the hashed password.
+// name: stores the user's full name.
+// birthDate: stores the date of birth.
+// location: stores the location.
+// city: stores the city.
+// email: stores the email address.
+// sexual_identity: stores the sexual identity.
+// sexual_preference: stores the sexual preference.
+// racial_preference: stores the racial preference.
+// meeting_interest: stores the meeting interest.
+// created_at: stores the timestamp of the user creation.
+// last_logged_in: stores the timestamp of the last login.
+// mer_id: initially set to null, later updated to the user's ID after the record is inserted.
+
+

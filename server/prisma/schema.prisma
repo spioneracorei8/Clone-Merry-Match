@@ -1,19 +1,63 @@
-// users Table:
+generator client {
+  provider = "prisma-client-js"
+}
 
-// Fields:
-// username: stores the username.
-// password: stores the hashed password.
-// name: stores the user's full name.
-// birthDate: stores the date of birth.
-// location: stores the location.
-// city: stores the city.
-// email: stores the email address.
-// sexual_identity: stores the sexual identity.
-// sexual_preference: stores the sexual preference.
-// racial_preference: stores the racial preference.
-// meeting_interest: stores the meeting interest.
-// created_at: stores the timestamp of the user creation.
-// last_logged_in: stores the timestamp of the last login.
-// mer_id: initially set to null, later updated to the user's ID after the record is inserted.
+datasource db {
+    provider = "postgresql"
+    url = env("PSQL_CONNECTION_MERRY_MATCH")
+}
 
+// table name will ref your table name you definded
+// ? optional (null)
+// ! required (not null)
+model user {
+      id                  String      @id @default(uuid())
+      username            String      @unique @db.VarChar(50)
+      password            String      @db.VarChar(255)
+      name                String      @db.VarChar(50)
+      birth_date          DateTime
+      location            String?     @db.VarChar(255)
+      city                String?     @db.VarChar(100) 
+      email               String      @unique @db.VarChar(100)
+      sexual_identity     String?     @db.VarChar(50) 
+      sexual_preference   String?     @db.VarChar(50)
+      racial_preference   String?     @db.VarChar(50)
+      meeting_interest    String?     @db.VarChar(100)
+      hobbies             Json        
+      created_at          DateTime    @default(now())
+      updated_at          DateTime    @updatedAt
+      last_logged_in      DateTime?
 
+      merry_list          merry_list[]
+      image               image[]
+
+      @@index([id])
+}
+
+model image {
+      id                   String       @id @default(uuid())
+      user_id              String
+      image_url            String
+      status               status       @default(active)
+      created_at           DateTime     @default(now())
+      updated_at           DateTime     @updatedAt
+
+      user                 user         @relation(fields: [user_id], references: [id])
+      
+      @@index([id])
+}
+
+model merry_list {
+      id                   String       @id @default(uuid())
+      user                 user         @relation(fields: [user_id], references: [id])
+      user_id              String
+      created_at           DateTime     @default(now())
+      updated_at           DateTime     @updatedAt
+
+      @@index([id])
+}
+
+enum status {
+  active
+  inactive
+}

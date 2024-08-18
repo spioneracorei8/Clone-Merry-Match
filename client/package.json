@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --port 30002",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -28,6 +28,7 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
     "react-modal": "^3.16.1",
+    "react-router-dom": "^6.26.1",
     "react-tinder-card": "^1.6.2",
     "swiper": "^9.2.4",
     "uuid": "^9.0.0"

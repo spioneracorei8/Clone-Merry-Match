@@ -54,7 +54,6 @@ authRouter.post("/register", async (req, res) => {
           
           image: {
             create: images
-            .filter(image => image !== null)
             .map(image => ({
               id: newUUID(),
               image_url: image,
@@ -67,7 +66,6 @@ authRouter.post("/register", async (req, res) => {
 
       return createdUser
     })
-    console.log("newdata", regsiteredUser);
 
   } catch (error) {
     if (error.code === 'P2002') {

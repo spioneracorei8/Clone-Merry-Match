@@ -24,6 +24,7 @@ model user {
       racial_preference   String?     @db.VarChar(50)
       meeting_interest    String?     @db.VarChar(100)
       hobbies             Json        
+      about_me            String?     @db.VarChar(150)
       created_at          DateTime    @default(now())
       updated_at          DateTime    @updatedAt
       last_logged_in      DateTime?
@@ -37,7 +38,7 @@ model user {
 model image {
       id                   String       @id @default(uuid())
       user_id              String
-      image_url            String
+      image_url            String?
       status               status       @default(active)
       created_at           DateTime     @default(now())
       updated_at           DateTime     @updatedAt

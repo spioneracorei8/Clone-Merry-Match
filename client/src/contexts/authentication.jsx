@@ -16,18 +16,24 @@ function AuthProvider(props) {
   const [userParam, setUserParam] = useState("");
   const [complaintStatus, setComplaintStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  const updateProfilePic = (newProfilePic) => {
+  const navigate = useNavigate();
+  console.log(state);
+  const updateProfilePic = (picURL) => {
     setState((prevState) => ({
       ...prevState,
       user: {
-        ...prevState.user,
-        profilePic: newProfilePic,
+        ...prevState?.user,
+        profile_pictures: [
+          { ...prevState?.user?.profile_pictures[0], image_url: picURL },
+          ...prevState?.user?.profile_pictures?.slice(1),
+        ],
+        // profile_pictures: [
+        //   picURL,
+        //   ...prevState?.user?.profile_pictures?.slice(1),
+        // ],
       },
     }));
   };
-
-  const navigate = useNavigate();
 
   const login = async (data) => {
     try {
@@ -44,10 +50,7 @@ function AuthProvider(props) {
 
   const register = async (data) => {
     try {
-      const result = await instance.post(
-        `/auth/register`,
-        data
-      );
+      const result = await instance.post(`/auth/register`, data);
       return result;
     } catch (error) {
       return Promise.reject(error);
@@ -71,6 +74,7 @@ function AuthProvider(props) {
     <AuthContext.Provider
       value={{
         state,
+        setState,
         login,
         logout,
         register,

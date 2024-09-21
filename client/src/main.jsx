@@ -4,7 +4,7 @@ import App from "./App";
 import "./index.css";
 import { BrowserRouter as Router } from "react-router-dom";
 import { AuthProvider } from "./contexts/authentication";
-import jwtInterceptor from "./utils/jwtInterceptor";
+import jwtInterceptor from "./utils/jwtInterceptor.js";
 import { ChakraProvider } from "@chakra-ui/react";
 
 jwtInterceptor();

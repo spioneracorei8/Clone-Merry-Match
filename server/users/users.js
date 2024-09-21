@@ -1,195 +1,239 @@
 import { Router } from "express";
-// import { supabase } from "../app.js";
 import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
+import { ConvertToThaiTime } from "../utils/thaiTime.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { HOST } from "../constant/constant.js";
+import { protect } from "../middlewares/protect.js";
+import { newUUID } from "../utils/uuid.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// upload files section
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+  if (!allowedTypes.includes(file.mimetype)) {
+    const error = new Error("Incorrect file");
+    error.code = "INCORRECT_FILETYPE";
+    return cb(error, false);
+  }
+  cb(null, true);
+};
+
+const storage = multer.diskStorage({
+  destination: async function (req, file, cb) {
+    try {
+      const userId = req.params.userId;
+      const uploadPath = path.join(__dirname, `../uploads/${userId}/`);
+
+      // await fs.promises.rm(uploadPath, {
+      //   recursive: true,
+      //   force: true,
+      // }); 
+
+      await fs.promises.mkdir(uploadPath, { recursive: true });
+      cb(null, uploadPath);
+
+    } catch (err) {
+      cb(err);
+    }
+  },
+  filename: function (req, file, cb) {
+    const uuid = newUUID();
+    const newFileName = uuid.replaceAll("-", "");
+    cb(null, newFileName + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 7000000 }, // 7mb
+});
 
 const usersRouter = Router();
+const prisma = new PrismaClient({
+  log: ["query", "info", "warn", "error"],
+});
+
+usersRouter.get("/profile-pic/*", async (req, res) => {
+  const filePath = path.join(__dirname, `../uploads/${req.params[0]}`);
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      res.status(404).send("File not found");
+    } else {
+      res.sendFile(filePath);
+    }
+  });
+});
+
+usersRouter.use(protect);
 
 // read user profile
-// usersRouter.get("/:userId", async (req, res) => {
-//   try {
-//     const userId = req.params.userId;
-//     const { data, error } = await supabase
-//       .from("users")
-//       .select(
-//         `user_id, username, name, birthDate, email, location, city, sexual_preference, sexual_identity, meeting_interest, racial_preference, about_me, pictures(pic_url), hobbies_interests(hob_list)`
-//       )
-//       .match({ user_id: userId });
-//     if (error) {
-//       console.log(error);
-//       return res.status(500).send("Server error");
-//     }
-//     return res.json(data);
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).send("Server error");
-//   }
-// });
+usersRouter.get("/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        birth_date: true,
+        email: true,
+        location: true,
+        city: true,
+        sexual_preference: true,
+        sexual_identity: true,
+        meeting_interest: true,
+        racial_preference: true,
+        // about_me: true,
+        hobbies: true,
+        image: true,
+      },
+    });
+    return res.status(200).json(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error_msg: "Internal server error",
+      error: error,
+    });
+  }
+});
 
 // // update profile
-// usersRouter.put("/:userId", async (req, res) => {
-//   try {
-//     const userId = req.params.userId;
-//     const {
-//       name,
-//       birthDate,
-//       location,
-//       city,
-//       email,
-//       sexual_identity,
-//       sexual_preference,
-//       racial_preference,
-//       meeting_interest,
-//       about_me,
-//       hobby,
-//       image,
-//     } = req.body;
+usersRouter.put("/:userId", upload.array("files", 5), async (req, res) => {
+  const userId = req.params.userId;
+  const body = JSON.parse(req.body.body);
+  const files = req.files;
+  body.images.forEach((img, index) => {
+    files.forEach((f) => {
+      const fileIdx = parseInt(f.originalname.split(".")[0]);
+      if (index === fileIdx) {
+        const imgUrl = `${HOST}/user/profile-pic/${userId}/${f.filename}`;
+        return (img.image_url = imgUrl);
+      }
+    });
+  });
 
-//     let data;
+  try {
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const updateUser = await tx.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          name: body.name,
+          birth_date: new Date(body.birth_date),
+          location: body.location,
+          city: body.city,
+          email: body.email,
+          sexual_identity: body.sexual_identity,
+          sexual_preference: body.sexual_preference,
+          racial_preference: body.racial_preference,
+          meeting_interest: body.meeting_interest,
+          about_me: body.about_me,
+          hobbies: body.hobbies,
+          updated_at: ConvertToThaiTime(new Date()),
+          image: {
+            update: body.images.map((img) => ({
+              where: {
+                id: img.id,
+              },
+              data: {
+                image_url: img.image_url,
+                updated_at: ConvertToThaiTime(new Date()),
+              },
+            })),
+          },
+        },
+      });
 
-//     try {
-//       const { data: fetchedData, error } = await supabase
-//         .from("users")
-//         .update({
-//           name: name,
-//           birthDate: birthDate,
-//           location: location,
-//           city: city,
-//           email: email,
-//           sexual_identity: sexual_identity,
-//           sexual_preference: sexual_preference,
-//           racial_preference: racial_preference,
-//           meeting_interest: meeting_interest,
-//           about_me: about_me,
-//         })
-//         .match({ user_id: userId });
+      return updateUser;
+    });
 
-//       data = fetchedData;
+    const profilePics = await prisma.image.findMany({
+      where: {
+        user_id: userId,
+      },
+    });
 
-//       if (error) {
-//         console.log(error);
-//         return res.status(500).send("Server error");
-//       } else {
-//         // Fetch the updated user data after the update operation
-//         const { data: updatedData, error: fetchError } = await supabase
-//           .from("users")
-//           .select("*")
-//           .eq("user_id", userId);
-//         if (fetchError) {
-//           console.log(fetchError);
-//           return res
-//             .status(500)
-//             .send("Server error: Unable to fetch user data");
-//         }
-//         data = updatedData;
-//       }
-//     } catch (error) {
-//       console.log("Error updating users table:", error);
-//       return res.status(500).send("Server error: Error updating users table");
-//     }
-//     try {
-//       const hobbyList = req.body.hobby?.slice(0, 10) || [];
-//       if (hobbyList.length > 0) {
-//         const { data: hobbies, error: hobbyError } = await supabase
-//           .from("hobbies_interests")
-//           .select("*")
-//           .eq("user_id", userId);
-//         const exitingHobbyList = hobbies.map((hobby) => hobby.hob_list);
-//         // if hobby in db and hobby form req equal
-//         if (JSON.stringify(exitingHobbyList) !== JSON.stringify(hobbyList)) {
-//           const { error: deleteError } = await supabase
-//             .from("hobbies_interests")
-//             .delete()
-//             .eq("user_id", userId);
-//           if (deleteError) {
-//             console.log(deleteError);
-//             return res.status(500).send("Server error");
-//           }
+    const firstProfilePicURL = profilePics.find(
+      (pic) => pic.image_url !== null
+    )?.image_url;
 
-//           const { data: hobbyData, error: insertError } = await supabase
-//             .from("hobbies_interests")
-//             .insert(
-//               hobbyList.map((hobby) => {
-//                 return {
-//                   user_id: userId,
-//                   hob_list: hobby,
-//                 };
-//               })
-//             );
-//           if (insertError) {
-//             console.log(insertError);
-//           }
-//         }
-//       }
-//     } catch (error) {
-//       console.log("Error updating hobbies_interests table:", error);
-//       return res
-//         .status(500)
-//         .send("Server error: Error updating hobbies_interests table");
-//     }
-//     try {
-//       const newUrls = image.map((url) => url.url);
-//       const { data: exitingPictures, error: exitingPicturesError } =
-//         await supabase.from("pictures").select("*").eq("user_id", userId);
+    const token = jwt.sign(
+      {
+        user_id: updatedUser.id,
+        username: updatedUser.username,
+        name: updatedUser.name,
+        profile_pictures: profilePics,
+      },
+      process.env.SECRET_KEY,
+      { expiresIn: "1h" }
+    );
 
-//       if (exitingPicturesError) {
-//         console.log(exitingPicturesError);
-//         return res.status(500).send("Server error");
-//       }
-//       const exitingUrls = exitingPictures.map((picture) => picture.pic_url);
-//       if (JSON.stringify(exitingUrls) !== JSON.stringify(newUrls)) {
-//         const { error: deleteError } = await supabase
-//           .from("pictures")
-//           .delete()
-//           .eq("user_id", userId);
-//         if (deleteError) {
-//           console.log(deleteError);
-//           return res.status(500).send("Server error");
-//         }
-//         const { data: insertData, error: insertError } = await supabase
-//           .from("pictures")
-//           .insert(
-//             image.map((url) => {
-//               return {
-//                 user_id: userId,
-//                 pic_url: url.url,
-//               };
-//             })
-//           );
-//         if (insertError) {
-//           console.log(insertError);
-//           return res.status(500).send("Server error");
-//         }
-//       }
-//     } catch (error) {
-//       console.log("Error updating pictures table:", error);
-//       return res
-//         .status(500)
-//         .send("Server error: Error updating pictures table");
-//     }
-//     if (data && data.length > 0) {
-//       const token = jwt.sign(
-//         {
-//           user_id: data[0].user_id,
-//           username: data[0].username,
-//           name: data[0].name,
-//           profilePic: image[0].url,
-//         },
-//         process.env.SECRET_KEY,
-//         { expiresIn: "1h" }
-//       );
-//       return res.status(200).json({
-//         message: "User profile updated successfully!",
-//         token: token,
-//       });
-//     } else {
-//       console.log("Data after update:", data); // Add this line for debugging
-//       return res.status(500).send("Server error: Unable to fetch user data");
-//     }
-//   } catch (error) {
-//     console.log("General server error:", error);
-//     res.status(500).send("Server error");
-//   }
-// });
+    return res.status(200).json({
+      message: "User profile updated successfully!",
+      token: token,
+      pic_url: firstProfilePicURL,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      "error msg": "Internal server error",
+      error: error,
+    });
+  }
+
+  // try {
+  //   const newUrls = image.map((url) => url.url);
+  //   const { data: exitingPictures, error: exitingPicturesError } =
+  //     await supabase.from("pictures").select("*").eq("user_id", userId);
+
+  //   if (exitingPicturesError) {
+  //     console.log(exitingPicturesError);
+  //     return res.status(500).send("Server error");
+  //   }
+  //   const exitingUrls = exitingPictures.map((picture) => picture.pic_url);
+  //   if (JSON.stringify(exitingUrls) !== JSON.stringify(newUrls)) {
+  //     const { error: deleteError } = await supabase
+  //       .from("pictures")
+  //       .delete()
+  //       .eq("user_id", userId);
+  //     if (deleteError) {
+  //       console.log(deleteError);
+  //       return res.status(500).send("Server error");
+  //     }
+  //     const { data: insertData, error: insertError } = await supabase
+  //       .from("pictures")
+  //       .insert(
+  //         image.map((url) => {
+  //           return {
+  //             user_id: userId,
+  //             pic_url: url.url,
+  //           };
+  //         })
+  //       );
+  //     if (insertError) {
+  //       console.log(insertError);
+  //       return res.status(500).send("Server error");
+  //     }
+  //   }
+  // } catch (error) {
+  //   console.log("Error updating pictures table:", error);
+  //   return res
+  //     .status(500)
+  //     .send("Server error: Error updating pictures table");
+  // }
+});
 
 // // Example search
 // // GET /users?keyword=john&meeting_interest=male&min_age=20&max_age=30

@@ -17,9 +17,9 @@ import {
 
 function NavigationbarUser() {
   const [showProfile, setShowProfile] = useState(false);
-  const { logout, state } = useAuth();
+  const { logout, state, setState } = useAuth();
   const [userData, setUserData] = useState(null);
-
+  const [profilePic, setProfilePic] = useState("");
   const [notifications, setNotifications] = useState([]);
 
   const fetchNotifications = async () => {
@@ -43,6 +43,11 @@ function NavigationbarUser() {
 
   useEffect(() => {
     fetchNotifications();
+
+    const profilePic = state?.user?.profile_pictures?.find(
+      (pic) => pic.image_url !== null
+    )?.image_url;
+    setProfilePic(profilePic);
   }, []);
 
   return (
@@ -87,7 +92,7 @@ function NavigationbarUser() {
                 </MenuButton>
                 <MenuList borderRadius={12} width="254px" alignItems="center">
                   {notifications?.every((item) => item.noti_read) ? (
-                    <MenuItem alignItems="center"> 
+                    <MenuItem alignItems="center">
                       <div className="flex items-center px-[8px]">
                         <p className="block px-4 py-2 text-sm text-gray-700 ">
                           No new notification
@@ -131,7 +136,7 @@ function NavigationbarUser() {
                 >
                   <div>
                     <Image
-                      src={state?.user?.profilePic || null}
+                      src={profilePic}
                       alt="Profile"
                       className="w-[48px] h-[48px] rounded-full cursor-pointer object-cover transition-all duration-300 hover:scale-125"
                     />

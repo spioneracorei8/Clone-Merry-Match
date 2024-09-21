@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { instanceAttToken } from "../constant/AxiosInstance";
 
 const useData = () => {
   const navigate = useNavigate();
@@ -33,18 +34,20 @@ const useData = () => {
     }
   };
 
-  const updateUserProfile = async (userId, data) => {
+  const updateUserProfile = async (userId, data, files) => {
     try {
+      const formData = new FormData();
+      formData.append("body", JSON.stringify(data));
+      files.forEach(f => {
+        formData.append("files", f)
+      });
       setIsError(false);
       setIsLoading(true);
-      const response = await axios.put(
-        `http://localhost:3000/users/${userId}`,
-        data
-      );
+      const response = await instanceAttToken.put(`/user/${userId}`, formData);
       setIsLoading(false);
       return response.data;
     } catch (error) {
-      console.log("Error updating user profile:", error.response.data);
+      console.log("Error updating user profile:", error);
       setIsError(true);
       setIsLoading(false);
       return null;
@@ -96,7 +99,6 @@ const useData = () => {
   };
 
   const userRejectSwipeLeft = async (userId, data) => {
-  
     try {
       setIsError(false);
       setIsLoading(true);
@@ -121,7 +123,6 @@ const useData = () => {
   };
 
   const deleteMerryMatch = async (userId, deleteUserId) => {
-  
     try {
       setIsError(false);
       setIsLoading(true);

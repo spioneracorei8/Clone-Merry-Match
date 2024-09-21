@@ -1,22 +1,16 @@
 function RegisterForm3(props) {
-
   const handleImageClick = (index) => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
     input.onchange = (event) => {
       const file = event.target.files[0];
-      let url = URL.createObjectURL(file)
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        props.setImages((prevImages) => {
-          const newImages = [...prevImages];
-          newImages[index] = url;
-          return newImages;
-        });
-      };
-      reader.readAsDataURL(file);
+      console.log(file);
+      props.setImages((prevImages) => {
+        const newImages = [...prevImages];
+        newImages[index] = file;
+        return newImages;
+      });
     };
     input.click();
   };
@@ -50,7 +44,6 @@ function RegisterForm3(props) {
     const newImages = [...props.images];
     newImages[index] = null;
     props.setImages(newImages);
-
   };
 
   return (
@@ -62,7 +55,7 @@ function RegisterForm3(props) {
 
       <div className="grid grid-cols-5 grid-rows-1 gap-2">
         {props.images.map((image, index) => (
-          <div key={index} >
+          <div key={index}>
             <div
               className="w-[167px] h-[167px] bg-[#F1F2F6] rounded-2xl cursor-pointer relative z-0 "
               onClick={() => handleImageClick(index)}

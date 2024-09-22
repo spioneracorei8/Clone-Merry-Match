@@ -2,8 +2,8 @@ import { Router } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { PrismaClient } from "@prisma/client";
-import { newUUID } from "../utils/uuid.js";
-import { ConvertToThaiTime } from "../utils/thaiTime.js";
+import { NewUUID } from "../utils/util.js";
+import { ConvertToThaiTime } from "../utils/util.js";
 const authRouter = Router();
 const prisma = new PrismaClient({
   log: ['query'], 
@@ -36,7 +36,7 @@ authRouter.post("/register", async (req, res) => {
     const regsiteredUser = await prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
         data: {
-          id: newUUID(),
+          id: NewUUID(),
           username,
           password: hashPassword,
           name,
@@ -55,7 +55,7 @@ authRouter.post("/register", async (req, res) => {
           image: {
             create: images
             .map(image => ({
-              id: newUUID(),
+              id: NewUUID(),
               image_url: image,
               created_at: ConvertToThaiTime(new Date()),
               updated_at: ConvertToThaiTime(new Date()),

@@ -44,7 +44,6 @@ function Profile() {
 
   const countries = CountryStateData;
   const cities = CountryStateData.flatMap((country) => country.states);
-
   const toast = useToast();
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -149,7 +148,6 @@ function Profile() {
   }, []);
 
   // ------------section 2 ---------------
-  console.log(initialUser);
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -189,17 +187,29 @@ function Profile() {
     const input = document.createElement("input");
     input.accept = "image/*";
     input.type = "file";
-    input.multiple;
 
     input.onchange = (event) => {
       let file = event.target.files[0];
-      const fileExtension = file.name.split(".").pop();
-      const newFileName = `${index}.${fileExtension}`;
+      const fileExt = file.name.split(".").pop();
+      const newFileName = `${index}.${fileExt}`;
       const newFile = new File([file], newFileName, { type: file.type });
       setNewFileImgs((prev) => {
-        return [...prev, newFile];
+        const fileIndex = prev?.findIndex(
+          (existingFile) => existingFile.name.split(".")[0] === `${index}`
+        );
+        if (fileIndex !== -1) {
+          const updatedFiles = [...prev];
+          updatedFiles[fileIndex] = newFile;
+          return updatedFiles;
+        } else {
+          return [...prev, newFile];
+        }
       });
-      if (file.type !== "image/png" && file.type !== "image/jpeg") {
+      if (
+        file.type !== "image/png" &&
+        file.type !== "image/jpeg" &&
+        file.type !== "image/jpg"
+      ) {
         toast({
           title: "Invalid file format.",
           description: "Only PNG and JPEG images are accepted.",
@@ -276,7 +286,6 @@ function Profile() {
     setShowProfile(false);
   };
 
-  
   return (
     <>
       <NavigationbarUser />

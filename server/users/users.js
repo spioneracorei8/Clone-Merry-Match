@@ -1,57 +1,71 @@
-import { Router } from "express";
-import jwt from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
-import { ConvertToThaiTime } from "../utils/thaiTime.js";
-import multer from "multer";
 import path from "path";
 import fs from "fs";
+import multer from "multer";
+import jwt from "jsonwebtoken";
+import { Router } from "express";
+import { PrismaClient } from "@prisma/client";
 import { fileURLToPath } from "url";
+
+import { ConvertToThaiTime } from "../utils/util.js";
 import { HOST } from "../constant/constant.js";
 import { protect } from "../middlewares/protect.js";
-import { newUUID } from "../utils/uuid.js";
+import { NewUUID } from "../utils/util.js";
+import { ImageFilter } from "../constant/file.js";
+import {
+  KEY_ERROR_MSG,
+  MSG_INTERNAL_SERVER_ERROR,
+  MSG_NOT_FOUND,
+} from "../constant/error.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// upload files section
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-  if (!allowedTypes.includes(file.mimetype)) {
-    const error = new Error("Incorrect file");
-    error.code = "INCORRECT_FILETYPE";
-    return cb(error, false);
-  }
-  cb(null, true);
-};
-
-const storage = multer.diskStorage({
+const imagesStorage = multer.diskStorage({
   destination: async function (req, file, cb) {
     try {
       const userId = req.params.userId;
       const uploadPath = path.join(__dirname, `../uploads/${userId}/`);
 
-      // await fs.promises.rm(uploadPath, {
-      //   recursive: true,
-      //   force: true,
-      // }); 
-
+      fs.readdir(uploadPath, (err, files) => {
+        if (err) {
+          cb(err);
+        }
+        files.forEach((f) => {
+          // old files section
+          const baseName = f.split(".")[0];
+          const oldOriginalName = baseName.slice(-1);
+          //
+          // new file section
+          const newOriginalName = file.originalname.split(".")[0];
+          //
+          if (oldOriginalName === newOriginalName) {
+            const deleteFilePath = uploadPath + f;
+            // fs.unlink -> delete file by path + name
+            fs.unlink(deleteFilePath, (err) => {
+              if (err) {
+                cb(err);
+              }
+            });
+          }
+        });
+      });
+      // fs.promises.mkdir will creating new file if its exists will not creating new file
       await fs.promises.mkdir(uploadPath, { recursive: true });
       cb(null, uploadPath);
-
     } catch (err) {
       cb(err);
     }
   },
   filename: function (req, file, cb) {
-    const uuid = newUUID();
+    const uuid = NewUUID();
     const newFileName = uuid.replaceAll("-", "");
-    cb(null, newFileName + path.extname(file.originalname));
+    cb(null, newFileName + file.originalname);
   },
 });
 
 const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+  storage: imagesStorage,
+  fileFilter: ImageFilter,
   limits: { fileSize: 7000000 }, // 7mb
 });
 
@@ -61,12 +75,12 @@ const prisma = new PrismaClient({
 });
 
 usersRouter.get("/profile-pic/*", async (req, res) => {
-  const filePath = path.join(__dirname, `../uploads/${req.params[0]}`);
-  fs.access(filePath, fs.constants.F_OK, (err) => {
+  const img = path.join(__dirname, `../uploads/${req.params[0]}`);
+  fs.access(img, fs.constants.F_OK, (err) => {
     if (err) {
       res.status(404).send("File not found");
     } else {
-      res.sendFile(filePath);
+      res.status(200).sendFile(img);
     }
   });
 });
@@ -93,7 +107,7 @@ usersRouter.get("/:userId", async (req, res) => {
         sexual_identity: true,
         meeting_interest: true,
         racial_preference: true,
-        // about_me: true,
+        about_me: true,
         hobbies: true,
         image: true,
       },
@@ -102,7 +116,7 @@ usersRouter.get("/:userId", async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({
-      error_msg: "Internal server error",
+      KEY_ERROR_MSG: MSG_INTERNAL_SERVER_ERROR,
       error: error,
     });
   }
@@ -113,6 +127,7 @@ usersRouter.put("/:userId", upload.array("files", 5), async (req, res) => {
   const userId = req.params.userId;
   const body = JSON.parse(req.body.body);
   const files = req.files;
+
   body.images.forEach((img, index) => {
     files.forEach((f) => {
       const fileIdx = parseInt(f.originalname.split(".")[0]);
@@ -188,51 +203,10 @@ usersRouter.put("/:userId", upload.array("files", 5), async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({
-      "error msg": "Internal server error",
+      KEY_ERROR_MSG: MSG_INTERNAL_SERVER_ERROR,
       error: error,
     });
   }
-
-  // try {
-  //   const newUrls = image.map((url) => url.url);
-  //   const { data: exitingPictures, error: exitingPicturesError } =
-  //     await supabase.from("pictures").select("*").eq("user_id", userId);
-
-  //   if (exitingPicturesError) {
-  //     console.log(exitingPicturesError);
-  //     return res.status(500).send("Server error");
-  //   }
-  //   const exitingUrls = exitingPictures.map((picture) => picture.pic_url);
-  //   if (JSON.stringify(exitingUrls) !== JSON.stringify(newUrls)) {
-  //     const { error: deleteError } = await supabase
-  //       .from("pictures")
-  //       .delete()
-  //       .eq("user_id", userId);
-  //     if (deleteError) {
-  //       console.log(deleteError);
-  //       return res.status(500).send("Server error");
-  //     }
-  //     const { data: insertData, error: insertError } = await supabase
-  //       .from("pictures")
-  //       .insert(
-  //         image.map((url) => {
-  //           return {
-  //             user_id: userId,
-  //             pic_url: url.url,
-  //           };
-  //         })
-  //       );
-  //     if (insertError) {
-  //       console.log(insertError);
-  //       return res.status(500).send("Server error");
-  //     }
-  //   }
-  // } catch (error) {
-  //   console.log("Error updating pictures table:", error);
-  //   return res
-  //     .status(500)
-  //     .send("Server error: Error updating pictures table");
-  // }
 });
 
 // // Example search
@@ -419,7 +393,7 @@ usersRouter.put("/:userId", upload.array("files", 5), async (req, res) => {
 //   }
 // });
 
-// // ---------------delete user----------------------
+// ---------------delete user----------------------
 
 // usersRouter.delete("/:userId", async (req, res) => {
 //   const userId = req.params.userId;

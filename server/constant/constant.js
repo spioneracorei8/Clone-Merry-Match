@@ -1,4 +1,1 @@
-const HOST = "http://localhost:30001"
-
-
-export { HOST }
+export const HOST = process.env.HOST

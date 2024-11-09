@@ -10,7 +10,7 @@ import chatRouter from "./merrylist/chat.js";
 import complaintRouter from "./complaint/complaint.js";
 import { protect } from "./middlewares/protect.js";
 import notificationRouter from "./notification/notification.js";
-
+import fileRouter from "./file/file.js";
 dotenv.config();
 
 async function init() {
@@ -29,6 +29,7 @@ async function init() {
   app.use("/chat", protect, chatRouter);
   app.use("/complaint", protect, complaintRouter);
   app.use("/notification", protect, notificationRouter);
+  app.use("/file", fileRouter);
 
   app.listen(port, () => {
     console.log(`Server merry-match is listening on port ${port}`);

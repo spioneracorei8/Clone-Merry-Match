@@ -29,16 +29,18 @@ model user {
       updated_at          DateTime    @updatedAt
       last_logged_in      DateTime?
 
-      merry_list          merry_list[]
-      image               image[]
+      merry_list              merry_list[]
+      photo                   photo[]
+      received_notifications  notifications[] @relation(name: "Recipient")
+      sent_notifications      notifications[] @relation(name: "Sender")
 
       @@index([id])
 }
 
-model image {
+model photo {
       id                   String       @id @default(uuid())
       user_id              String
-      image_url            String?
+      path                 String?
       status               status       @default(active)
       created_at           DateTime     @default(now())
       updated_at           DateTime     @updatedAt
@@ -54,6 +56,30 @@ model merry_list {
       user_id              String
       created_at           DateTime     @default(now())
       updated_at           DateTime     @updatedAt
+
+      @@index([id])
+}
+
+model merry_status {
+      id                   String       @id @default(uuid())
+      status               String       
+      mer_id               String       @default(uuid())
+      user_id              String       @default(uuid())
+
+      @@index([id])
+}
+
+model notifications {
+      id                      String      @id @default(uuid())
+      user_noti_recipient     user        @relation(name: "Recipient", fields: [noti_recipient_id], references: [id])
+      noti_recipient_id       String      
+
+      user_noti_sender        user        @relation(name: "Sender", fields: [noti_sender_id], references: [id])
+      noti_sender_id          String      
+
+      noti_message            String      @db.VarChar(100)
+      noti_read               Boolean     @default(false)
+
 
       @@index([id])
 }

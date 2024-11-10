@@ -44,12 +44,12 @@ function NavigationbarUser() {
   useEffect(() => {
     fetchNotifications();
 
-    const profilePic = state?.user?.profile_pictures?.find(
-      (pic) => pic.image_url !== null
-    )?.image_url;
+    const profilePic = state?.user?.photos?.find(
+      (pic) => pic?.path !== null
+    )?.path;
     setProfilePic(profilePic);
   }, []);
-
+    
   return (
     <>
       {showProfile && (

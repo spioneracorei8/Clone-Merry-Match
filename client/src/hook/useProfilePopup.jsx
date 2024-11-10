@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import jwtDecode from "jwt-decode";
-import { userInitialValue } from "../models/user.js";
+import { previewUserModel } from "../models/user.js";
 import { instanceAttToken } from "../constant/AxiosInstance";
 import { FormattedDate } from "../utils/util.js";
 
 const useProfilePopup = () => {
-  const [initialUser, setInitialUser] = useState(userInitialValue);
-
-  const [countImgs, setCountImgs] = useState(0);
+  const [user, setUser] = useState(previewUserModel);
+  const [countPhotos, setCountPhotos] = useState(0);
 
   const time = new Date();
   const year = time.getFullYear();
@@ -30,7 +29,7 @@ const useProfilePopup = () => {
           }
         );
         const formattedData = FormattedDate(response.data.birth_date);
-        setInitialUser({
+        setUser({
           name: response?.data?.name,
           username: response?.data?.username,
           birth_date: formattedData,
@@ -43,7 +42,7 @@ const useProfilePopup = () => {
           meeting_interest: response?.data?.meeting_interest,
           hobbies: response?.data?.hobbies,
           about_me: response?.data?.about_me,
-          images: response?.data?.image,
+          photos: response?.data?.photos,
         });
       } catch (error) {
         console.error("Error decoding the token or fetching user data:", error);
@@ -51,7 +50,7 @@ const useProfilePopup = () => {
     }
   };
 
-  const userBirthDate = initialUser?.birth_date;
+  const userBirthDate = user?.birth_date;
   const [userBirthDateYear, userBirthDateMonth, userBirthDateDay] =
     userBirthDate.split("-").map(Number);
   const ageInYears =
@@ -62,22 +61,22 @@ const useProfilePopup = () => {
       ? 1
       : 0);
 
-  const imgsLength = initialUser?.images?.filter(
-    (img) => img?.image_url !== null
+  const photosLength = user?.photos?.filter(
+    (photo) => photo?.path !== null
   )?.length;
   const handleNextImage = () => {
-    if (countImgs === imgsLength - 1) {
-      setCountImgs(0);
+    if (countPhotos === photosLength - 1) {
+      setCountPhotos(0);
     } else {
-      setCountImgs(countImgs + 1);
+      setCountPhotos(countPhotos + 1);
     }
   };
 
   const handlePreviousImage = () => {
-    if (countImgs === 0) {
-      setCountImgs(imgsLength - 1);
+    if (countPhotos === 0) {
+      setCountPhotos(photosLength - 1);
     } else {
-      setCountImgs(countImgs - 1);
+      setCountPhotos(countPhotos - 1);
     }
   };
 
@@ -86,8 +85,8 @@ const useProfilePopup = () => {
   }, []);
 
   return {
-    initialUser,
-    countImgs,
+    user,
+    countPhotos,
     ageInYears,
     handleNextImage,
     handlePreviousImage,

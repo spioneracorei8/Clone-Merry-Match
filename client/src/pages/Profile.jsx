@@ -16,31 +16,18 @@ import {
   AlertDescription,
 } from "@chakra-ui/react";
 import { instanceAttToken } from "../constant/AxiosInstance";
-import { userInitialValue } from "../models/user.js";
+import { previewUserModel } from "../models/user.js";
 import { FormattedDate } from "../utils/util.js";
 
 function Profile() {
   const { updateUserProfile } = useData();
   const { state, loading, updateProfilePic } = useAuth();
-  const [initialUser, setInitialUser] = useState({
-    name: "",
-    username: "",
-    birth_date: "",
-    location: "",
-    city: "",
-    email: "",
-    sexual_identity: "",
-    sexual_preference: "",
-    racial_preference: "",
-    meeting_interest: "",
-    hobbies: [],
-    about_me: "",
-    images: Array(5).fill(null),
-  });
-  const [newHobbies, setNewHobbies] = useState("");
-  const [newFileImgs, setNewFileImgs] = useState([]);
+  const [user, setUser] = useState(previewUserModel);
+  const [newPhotos, setNewPhotos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [profileUpdated, setProfileUpdated] = useState(false);
+  console.log(user.photos);
+  console.log(newPhotos);
 
   const countries = CountryStateData;
   const cities = CountryStateData.flatMap((country) => country.states);
@@ -48,16 +35,16 @@ function Profile() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    if (initialUser?.images?.length > 2) {
+    if (user?.photos?.length > 2) {
       let notNullImg = 0;
-      initialUser?.images?.forEach((img) => {
-        if (img?.image_url !== null) {
+      user?.photos?.forEach((photo) => {
+        if (photo?.path !== null) {
           notNullImg++;
         }
       });
       if (notNullImg <= 1) {
         toast({
-          title: "Image must have 2 or more images.",
+          title: "Photo must have 2 or more photos.",
           status: "error",
           duration: 3000,
           isClosable: true,
@@ -66,13 +53,13 @@ function Profile() {
         setIsLoading(false);
         return;
       }
-      if (!initialUser?.username) {
+      if (!user?.username) {
         toast({
           title: "Please enter username",
           position: "top",
           isClosable: true,
         });
-      } else if (!initialUser?.name) {
+      } else if (!user?.name) {
         toast({
           title: "Please enter name",
           position: "top",
@@ -81,8 +68,8 @@ function Profile() {
       } else {
         const response = await updateUserProfile(
           state?.user?.user_id,
-          initialUser,
-          newFileImgs
+          user,
+          newPhotos
         );
         if (response && response.token) {
           localStorage.setItem("token", response.token);
@@ -104,7 +91,7 @@ function Profile() {
   };
 
   const handleUpdateValue = (e) => {
-    setInitialUser((prev) => ({
+    setUser((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
@@ -119,22 +106,22 @@ function Profile() {
           `/user/${userDataFromToken.user_id}`
         );
 
-        const formattedData = FormattedDate(response.data.birth_date);
-        setInitialUser((prev) => ({
+        const formattedDate = FormattedDate(response?.data?.birth_date);
+        setUser((prev) => ({
           ...prev,
-          name: response.data.name,
-          birth_date: formattedData,
-          location: response.data.location,
-          city: response.data.city,
-          username: response.data.username,
-          email: response.data.email,
-          sexual_identity: response.data.sexual_identity,
-          sexual_preference: response.data.sexual_preference,
-          racial_preference: response.data.racial_preference,
-          meeting_interest: response.data.meeting_interest,
-          about_me: response.data.about_me,
-          images: response.data.image,
-          hobbies: response.data.hobbies,
+          name: response?.data?.name,
+          birth_date: formattedDate,
+          location: response?.data?.location,
+          city: response?.data?.city,
+          username: response?.data?.username,
+          email: response?.data?.email,
+          sexual_identity: response?.data?.sexual_identity,
+          sexual_preference: response?.data?.sexual_preference,
+          racial_preference: response?.data?.racial_preference,
+          meeting_interest: response?.data?.meeting_interest,
+          about_me: response?.data?.about_me,
+          photos: response?.data?.photos,
+          hobbies: response?.data?.hobbies,
         }));
         setIsLoading(false);
       } catch (error) {
@@ -157,26 +144,26 @@ function Profile() {
 
   const maxHobbies = 10;
   const addNewHobbies = () => {
-    if (newHobbies.trim() !== "") {
-      if (initialUser?.hobbies?.length >= maxHobbies) {
+    if (user?.hobby?.trim() !== "") {
+      if (user?.hobby?.length >= maxHobbies) {
         alert(`You can only add up to ${maxHobbies} hobbies.`);
         return;
       }
-      const newHobby = [...initialUser?.hobbies];
-      newHobby.push(newHobbies.trim());
-      setInitialUser((prev) => ({
+      const newHobby = [...user?.hobbies];
+      newHobby.push(user?.hobby?.trim());
+      setUser((prev) => ({
         ...prev,
         hobbies: newHobby,
+        hobby: "",
       }));
-      setNewHobbies("");
     }
   };
 
   const deleteHobby = (e, index) => {
     e.preventDefault();
-    const newHobbies = [...initialUser?.hobbies];
+    const newHobbies = [...user?.hobbies];
     newHobbies.splice(index, 1);
-    setInitialUser((prev) => ({
+    setUser((prev) => ({
       ...prev,
       hobbies: newHobbies,
     }));
@@ -192,17 +179,19 @@ function Profile() {
       let file = event.target.files[0];
       const fileExt = file.name.split(".").pop();
       const newFileName = `${index}.${fileExt}`;
-      const newFile = new File([file], newFileName, { type: file.type });
-      setNewFileImgs((prev) => {
+      const newPhoto = new File([file], newFileName, { type: file.type });
+      setNewPhotos((prev) => {
         const fileIndex = prev?.findIndex(
-          (existingFile) => existingFile.name.split(".")[0] === `${index}`
+          (existingFile) => existingFile?.name?.split(".")[0] === `${index}`
         );
-        if (fileIndex !== -1) {
-          const updatedFiles = [...prev];
-          updatedFiles[fileIndex] = newFile;
-          return updatedFiles;
+        console.log(fileIndex);
+
+        if (fileIndex === -1) {
+          return [...prev, newPhoto];
         } else {
-          return [...prev, newFile];
+          const updatedPhoto = [...prev];
+          updatedPhoto[fileIndex] = newPhoto;
+          return updatedPhoto;
         }
       });
       if (
@@ -219,11 +208,11 @@ function Profile() {
           position: "top",
         });
       }
-      const newImages = [...initialUser?.images];
-      newImages[index].image_url = URL.createObjectURL(file);
-      setInitialUser((prev) => ({
+      const newPhotos = [...user?.photos];
+      newPhotos[index].path = URL.createObjectURL(file);
+      setUser((prev) => ({
         ...prev,
-        images: newImages,
+        photos: newPhotos,
       }));
     };
     input.click();
@@ -233,14 +222,14 @@ function Profile() {
     event.preventDefault();
     const droppedIndex = event.dataTransfer.getData("text");
     if (droppedIndex === "") return;
-    setInitialUser((prev) => {
-      const newImages = [...prev.images];
-      const temp = newImages[index];
-      newImages[index] = newImages[droppedIndex];
-      newImages[droppedIndex] = temp;
+    setUser((prev) => {
+      const photos = [...prev.photos];
+      const temp = photos[index];
+      photos[index] = photos[droppedIndex];
+      photos[droppedIndex] = temp;
       return {
         ...prev,
-        images: newImages,
+        photos: photos,
       };
     });
   };
@@ -256,14 +245,19 @@ function Profile() {
   const deleteImage = (event, index) => {
     event.preventDefault();
     event.stopPropagation();
-    const newImages = [...initialUser?.images];
-    if (newImages[index]) {
-      newImages[index].image_url = null;
+    const newPhotos = [...user?.photos];
+    if (newPhotos[index]) {
+      newPhotos[index].path = null;
     }
-    setInitialUser((prev) => ({
+    setUser((prev) => ({
       ...prev,
-      images: newImages,
+      photos: newPhotos,
     }));
+    setNewPhotos((prev) => {
+      const updatedPhotos = [...prev];
+      updatedPhotos.splice(index - 1, 1);
+      return updatedPhotos;
+    });
   };
 
   const [deleteAccount, setDeleteAccount] = useState(false);
@@ -336,7 +330,7 @@ function Profile() {
                     name="name"
                     placeholder="Jon Snow"
                     onChange={(e) => handleUpdateValue(e)}
-                    value={initialUser?.name}
+                    value={user?.name}
                   />
                 </label>
               </div>
@@ -347,7 +341,7 @@ function Profile() {
                     className=" border-[1px]  font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px] pr-[16px] pl-[12px]"
                     type="date"
                     name="birth_date"
-                    value={initialUser?.birth_date}
+                    value={user?.birth_date}
                     onChange={(e) => handleUpdateValue(e)}
                     onClick={(e) => e.target.classList.add("text-black")}
                   />
@@ -358,7 +352,7 @@ function Profile() {
                 <select
                   className=" border-[1px]  font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px] pr-[16px] pl-[12px] "
                   name="location"
-                  value={initialUser?.location}
+                  value={user?.location}
                   onChange={(e) => handleUpdateValue(e)}
                   onClick={(e) => e.target.classList.add("text-black")}
                 >
@@ -379,7 +373,7 @@ function Profile() {
                 <select
                   className=" border-[1px]  font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px]  pl-[12px]"
                   name="city"
-                  value={initialUser?.city}
+                  value={user?.city}
                   onChange={(e) => handleUpdateValue(e)}
                   onClick={(e) => e.target.classList.add("text-black")}
                 >
@@ -393,7 +387,7 @@ function Profile() {
                       );
                       return filterCountries.some(
                         (filterCountry) =>
-                          filterCountry.country_name === initialUser?.location
+                          filterCountry.country_name === user?.location
                       );
                     })
                     .sort((a, b) => {
@@ -417,7 +411,7 @@ function Profile() {
                     type="text"
                     name="username"
                     placeholder="At least 6 characters"
-                    value={initialUser?.username}
+                    value={user?.username}
                     disabled
                   />
                 </label>
@@ -431,7 +425,7 @@ function Profile() {
                     type="email"
                     name="email"
                     placeholder="Jon Snow"
-                    value={initialUser?.email}
+                    value={user?.email}
                     disabled
                   />
                 </label>
@@ -450,7 +444,7 @@ function Profile() {
                 <select
                   className=" border-[1px]  font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px]  pl-[12px]"
                   name="sexual_identity"
-                  value={initialUser?.sexual_identity}
+                  value={user?.sexual_identity}
                   onChange={(e) => handleUpdateValue(e)}
                   onClick={(e) => e.target.classList.add("text-black")}
                 >
@@ -464,7 +458,7 @@ function Profile() {
                 <select
                   className=" border-[1px]  font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px]  pl-[12px]"
                   name="sexual_preference"
-                  value={initialUser?.sexual_preference}
+                  value={user?.sexual_preference}
                   onChange={(e) => handleUpdateValue(e)}
                   onClick={(e) => e.target.classList.add("text-black")}
                 >
@@ -479,7 +473,7 @@ function Profile() {
                 <select
                   className=" border-[1px]  font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px]  pl-[12px]"
                   name="racial_preference"
-                  value={initialUser?.racial_preference}
+                  value={user?.racial_preference}
                   onChange={(e) => handleUpdateValue(e)}
                   onClick={(e) => e.target.classList.add("text-black")}
                 >
@@ -495,7 +489,7 @@ function Profile() {
                 <select
                   className=" border-[1px]  font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px]  pl-[12px]"
                   name="meeting_interest"
-                  value={initialUser?.meeting_interest}
+                  value={user?.meeting_interest}
                   onChange={(e) => handleUpdateValue(e)}
                   onClick={(e) => e.target.classList.add("text-black")}
                 >
@@ -513,10 +507,10 @@ function Profile() {
             <div className=" mt-[50px] ">
               <h1>Hobbies / Interests (Maximum 10)</h1>
               <div className="w-full flex flex-row items-start justify-start border-[#D6D9E4] border-t-[1px] border-r-[1px] border-b-[1px] border-l-[1px] rounded-lg">
-                {initialUser?.hobbies?.length > 0 && (
+                {user?.hobbies?.length > 0 && (
                   <div className="border-[1px] border-none rounded-lg p-[8px]  text-[#9AA1B9] text-sm">
                     <ul className="flex flex-row ">
-                      {initialUser?.hobbies?.map((hobby, index) => (
+                      {user?.hobbies?.map((hobby, index) => (
                         <li
                           key={index}
                           className="bg-[#F4EBF2] border-[#D6D9E4] mr-2 rounded-lg p-[6px] text-[#7D2262] text-[14px] flex items-center"
@@ -536,10 +530,10 @@ function Profile() {
                 <input
                   className="border-[1px] font-normal border-none rounded-lg py-[12px] px-[12px] focus:outline-none w-full"
                   type="text"
-                  name="hobbies"
-                  value={newHobbies}
+                  name="hobby"
+                  value={user?.hobby}
                   onChange={(e) => {
-                    setNewHobbies(e.target.value);
+                    handleUpdateValue(e);
                   }}
                   onKeyPress={handleKeyPress}
                   style={{ wordWrap: "break-word" }}
@@ -553,7 +547,7 @@ function Profile() {
                     className="border-[1px] border-[#D6D9E4] rounded-lg w-[931px] h-[120px] py-[12px] pr-[16px] pl-[12px] "
                     type="text"
                     name="about_me"
-                    value={initialUser?.about_me}
+                    value={user?.about_me}
                     onChange={(e) => handleUpdateValue(e)}
                   />
                 </label>
@@ -568,23 +562,23 @@ function Profile() {
               </h1>
               <h2 className="mb-5">Upload at least 2 photos</h2>
               <div className="grid grid-cols-5 grid-rows-1 gap-2">
-                {initialUser?.images?.map((image, index) => (
+                {user?.photos?.map((photo, index) => (
                   <div key={index}>
                     <div
                       className="w-[167px] h-[167px] bg-[#F1F2F6] rounded-2xl cursor-pointer relative z-0 "
                       onClick={() => handleImageClick(index)}
                       onDrop={(event) => handleImageDrop(event, index)}
                       onDragOver={(event) => handleDragOver(event)}
-                      draggable={image?.image_url !== null}
+                      draggable={photo?.path !== null}
                       onDragStart={(event) => handleDragStart(event, index)}
                       style={{
-                        backgroundImage: `url(${image?.image_url})`,
+                        backgroundImage: `url(${photo?.path})`,
                         backgroundRepeat: "no-repeat",
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                       }}
                     >
-                      {image?.image_url === null && (
+                      {photo?.path === null && (
                         <div className="flex flex-col text-center justify-center items-center h-full transition-all duration-300  hover:scale-105 hover:bg-[#d0d0d0] hover:rounded-2xl active:scale-[0.8]">
                           <div>
                             <h1 className="text-[#7D2262] text-[30px]">+</h1>
@@ -593,7 +587,7 @@ function Profile() {
                         </div>
                       )}
 
-                      {image?.image_url !== null && (
+                      {photo?.path !== null && (
                         <button
                           className="absolute -right-2 -top-1 cursor-pointer z-10 block rounded-full bg-[#AF2758] text-white h-6 w-6"
                           onClick={(event) => deleteImage(event, index)}

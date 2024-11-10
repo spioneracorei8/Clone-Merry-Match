@@ -2,7 +2,10 @@ import CountryStateData from "../data/CountryStateData.json"
 
 function RegisterForm1(props) {
   const countries = CountryStateData
-  const cities = CountryStateData.flatMap(country => country.states)
+  const cities = CountryStateData?.flatMap(country => country?.states)
+  console.log(props);
+  
+  
 
   return (
     <div className="bg-[#FCFCFE] form-container px-[255px] py-8 h-[500px] w-[1440px] mx-auto">
@@ -16,9 +19,9 @@ function RegisterForm1(props) {
             <input
               className="border-[1px] border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px] pr-[16px] pl-[12px]"
               type="text"
-              name="Name"
-              value={props.name}
-              onChange={(e) => props.setName(e.target.value)}
+              name="name"
+              value={props?.user?.name}
+              onChange={(e) => props?.handleUpdateValue(e)}
               placeholder="Jon Snow"
             />
           </label>
@@ -29,9 +32,9 @@ function RegisterForm1(props) {
             <input
               className=" border-[1px] text-[#9AA1B9] font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px] pr-[16px] pl-[12px]"
               type="date"
-              name="Date"
-              value={props.birthDate}
-              onChange={(e) => props.setBirthDate(e.target.value)}
+              name="birth_date"
+              value={props?.user?.birth_date}
+              onChange={(e) => props?.handleUpdateValue(e)}
               onClick={(e) => e.target.classList.add("text-black")}
             />
           </label>
@@ -40,19 +43,19 @@ function RegisterForm1(props) {
           <h1>Location</h1>
           <select
             className=" border-[1px] text-[#9AA1B9] font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px] pr-[16px] pl-[12px] "
-            name="country"
-            value={props.location}
-            onChange={(e) => props.setLocation(e.target.value)}
+            name="location"
+            value={props?.user?.location}
+            onChange={(e) => props?.handleUpdateValue(e)}
             onClick={(e) => e.target.classList.add("text-black")}
           >
             <option value="">Select your country</option>
             {countries
-              .sort((a, b) => {
+              ?.sort((a, b) => {
                 return a > b ? 1 : -1;
               })
-              .map((country, index) => (
-                <option value={country.country_name} key={index}>
-                  {country.country_name}
+              ?.map((country, index) => (
+                <option value={country?.country_name} key={index}>
+                  {country?.country_name}
                 </option>
               ))}
           </select>
@@ -62,28 +65,28 @@ function RegisterForm1(props) {
           <h1>City</h1>
           <select
             className=" border-[1px] text-[#9AA1B9] font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px]  pl-[12px]"
-            name="City"
-            value={props.city}
-            onChange={(e) => props.setCity(e.target.value)}
+            name="city"
+            value={props?.user?.city}
+            onChange={(e) => props?.handleUpdateValue(e)}
             onClick={(e) => e.target.classList.add("text-black")}
           >
             <option value="">Select your city</option>
             {cities
-              .filter((city) => {
-                const filterCountries = CountryStateData.filter((country) => {
-                  return country.country_id === city.country_id;
+              ?.filter((city) => {
+                const filterCountries = CountryStateData?.filter((country) => {
+                  return country?.country_id === city?.country_id;
                 });
-                return filterCountries.some(
-                  (filterCountry) => filterCountry.country_name === props.location
+                return filterCountries?.some(
+                  (filterCountry) => filterCountry?.country_name === props?.user?.location
                 );
               })
-              .sort((a, b) => {
+              ?.sort((a, b) => {
                 return a > b ? -1 : 1;
               })
-              .map((city, index) => {
+              ?.map((city, index) => {
                 return (
-                  <option value={city.state_name} key={index}>
-                    {city.state_name}
+                  <option value={city?.state_name} key={index}>
+                    {city?.state_name}
                   </option>
                 );
               })}
@@ -96,10 +99,10 @@ function RegisterForm1(props) {
               <input
                 className=" border-[1px] border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px] pr-[16px] pl-[12px]"
                 type="text"
-                name="Username"
+                name="username"
                 placeholder="At least 6 characters"
-                value={props.username}
-                onChange={(e) => props.setUsername(e.target.value)}
+                value={props?.user?.username}
+                onChange={(e) => props?.handleUpdateValue(e)}
               />
             </label>
           </div>
@@ -111,9 +114,9 @@ function RegisterForm1(props) {
               className="border-[1px] border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px] pr-[16px] pl-[12px]"
               type="email"
               name="email"
-              placeholder="Jon Snow"
-              value={props.email}
-              onChange={(e) => props.setEmail(e.target.value)}
+              placeholder="john_snow@email.com"
+              value={props?.user?.email}
+              onChange={(e) => props?.handleUpdateValue(e)}
             />
           </label>
         </div>
@@ -123,10 +126,10 @@ function RegisterForm1(props) {
             <input
               className="border-[1px] border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px] pr-[16px] pl-[12px]"
               type="password"
-              name="Password"
+              name="password"
               placeholder="At least 8 characters"
-              value={props.password}
-              onChange={(e) => props.setPassword(e.target.value)}
+              value={props?.user?.password}
+              onChange={(e) => props?.handleUpdateValue(e)}
             />
           </label>
         </div>
@@ -136,10 +139,10 @@ function RegisterForm1(props) {
             <input
               className="border-[1px] font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px] pr-[16px] pl-[12px]"
               type="password"
-              name="Name"
+              name="confirm_password"
               placeholder="At least 8 characters"
-              value={props.confirmPassword}
-              onChange={(e) => props.setConfirmPassword(e.target.value)}
+              value={props?.user?.confirm_password}
+              onChange={(e) => props?.handleUpdateValue(e)}
             />
           </label>
         </div>

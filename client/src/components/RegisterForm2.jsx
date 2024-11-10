@@ -1,22 +1,38 @@
+import { useToast } from "@chakra-ui/react";
+
 function RegisterForm2(props) {
+  const toast = useToast();
   const maxHobbies = 10;
+  console.log(props);
 
   const addHobbyLists = () => {
-    if (props.info.trim() !== "") {
-      if (props.hobbyLists.length >= maxHobbies) {
-        alert(`You can only add up to ${maxHobbies} hobbies.`);
+    if (props?.user?.hobby?.trim() !== "") {
+      if (props?.user?.hobbies?.length >= maxHobbies) {
+        toast({
+          title: `You can only add up to ${maxHobbies} hobbies.`,
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+          position: "top",
+        });
         return;
       }
-      const newHobbyLists = [...props.hobbyLists];
-      newHobbyLists.push(props.info.trim());
-      props.setHobbyLists(newHobbyLists);
-      props.setInfo("");
+      const newHobbies = [...props?.user?.hobbies];
+      newHobbies.push(props?.user?.hobby?.trim());
+      props?.setUser?.((prev) => ({
+        ...prev,
+        hobbies: newHobbies,
+      }));
+      props?.setUser?.((prev) => ({
+        ...prev,
+        hobby: "",
+      }));
     }
   };
 
-  const handleKeyPress = (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
       addHobbyLists();
     }
   };
@@ -37,9 +53,9 @@ function RegisterForm2(props) {
           <h1>Sexual identities </h1>
           <select
             className=" border-[1px] text-[#9AA1B9] font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px]  pl-[12px]"
-            name="Sexual identities"
-            value={props.sexualIdentity}
-            onChange={(e) => props.setSexualIdentity(e.target.value)}
+            name="sexual_identity"
+            value={props?.user?.sexual_identity}
+            onChange={(e) => props?.handleUpdateValue(e)}
             onClick={(e) => e.target.classList.add("text-black")}
           >
             <option value="Female">Female</option>
@@ -51,9 +67,9 @@ function RegisterForm2(props) {
           <h1>Sexual preferences</h1>
           <select
             className=" border-[1px] text-[#9AA1B9] font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px]  pl-[12px]"
-            name="Sexual preferences"
-            value={props.sexualPreference}
-            onChange={(e) => props.setSexualPreference(e.target.value)}
+            name="sexual_preference"
+            value={props?.user?.sexual_preference}
+            onChange={(e) => props?.handleUpdateValue(e)}
             onClick={(e) => e.target.classList.add("text-black")}
           >
             <option value="Male">Male</option>
@@ -65,9 +81,9 @@ function RegisterForm2(props) {
           <h1>Racial preferences</h1>
           <select
             className=" border-[1px] text-[#9AA1B9] font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px]  pl-[12px]"
-            name="Racial preferences"
-            value={props.racialPreference}
-            onChange={(e) => props.setRacialPreference(e.target.value)}
+            name="racial_preference"
+            value={props?.user?.racial_preference}
+            onChange={(e) => props?.handleUpdateValue(e)}
             onClick={(e) => e.target.classList.add("text-black")}
           >
             <option value="Asian">Asian</option>
@@ -82,9 +98,9 @@ function RegisterForm2(props) {
           <h1>Meeting interests</h1>
           <select
             className=" border-[1px] text-[#9AA1B9] font-normal border-[#D6D9E4] rounded-lg w-[453px] h-[48px] py-[12px]  pl-[12px]"
-            name="Meeting interests"
-            value={props.meetingInterest}
-            onChange={(e) => props.setMeetingInterest(e.target.value)}
+            name="meeting_interest"
+            value={props?.user?.meeting_interest}
+            onChange={(e) => props?.handleUpdateValue(e)}
             onClick={(e) => e.target.classList.add("text-black")}
           >
             <option value="Partners">Partners</option>
@@ -98,10 +114,10 @@ function RegisterForm2(props) {
         <h1>Hobbies / Interests (Maximum 10)</h1>
 
         <div className="w-full flex flex-row items-start justify-start border-[#D6D9E4] border-t-[1px] border-r-[1px] border-b-[1px] border-l-[1px] rounded-lg">
-          {props.hobbyLists.length > 0 && (
+          {props?.user?.hobbies?.length > 0 && (
             <div className="border-[1px] border-none rounded-lg p-[8px]  text-[#9AA1B9] text-sm">
               <ul className="flex flex-row ">
-                {props.hobbyLists.map((hobby, index) => (
+                {props?.user?.hobbies?.map((hobby, index) => (
                   <li
                     key={index}
                     className="bg-[#F4EBF2] border-[#D6D9E4] mr-2 rounded-lg p-[6px] text-[#7D2262] text-[14px] flex items-center"
@@ -121,11 +137,12 @@ function RegisterForm2(props) {
           <input
             className="border-[1px] font-normal border-none rounded-lg py-[12px] px-[12px] focus:outline-none w-full"
             type="text"
-            value={props.info}
+            name="hobby"
+            value={props?.user?.hobby}
             onChange={(e) => {
-              props.setInfo(e.target.value);
+              props?.handleUpdateValue(e);
             }}
-            onKeyPress={handleKeyPress}
+            onKeyPress={(e) => handleKeyPress(e)}
             style={{ wordWrap: "break-word" }}
           />
         </div>

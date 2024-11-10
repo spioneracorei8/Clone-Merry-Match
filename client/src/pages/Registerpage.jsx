@@ -8,56 +8,53 @@ import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading";
 import { useToast } from "@chakra-ui/react";
 import { instance } from "../constant/AxiosInstance";
+import { previewUserModel } from "../models/user";
 
 function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [currentFormPage, setCurrentFormPage] = useState(1);
-  const [name, setName] = useState("");
-  const [birthDate, setBirthDate] = useState("2022-01-01");
-  const [location, setLocation] = useState("");
-  const [city, setCity] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [email, setEmail] = useState("");
-  const [sexualIdentity, setSexualIdentity] = useState("Male");
-  const [sexualPreference, setSexualPreference] = useState("Female");
-  const [racialPreference, setRacialPreference] = useState("Asia");
-  const [meetingInterest, setMeetingInterest] = useState("Partners");
-  const [hobbyLists, setHobbyLists] = useState([]);
-  const [info, setInfo] = useState("");
-  const [images, setImages] = useState([null, null, null, null, null]);
+  const [user, setUser] = useState(previewUserModel);
   const [isLoading, setIsLoading] = useState(null);
 
   const toast = useToast();
 
   const emailRegex =
     /^[\w-]+(\.[\w-]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,})$/;
-  const isValidEmail = emailRegex.test(email);
+  const isValidEmail = emailRegex.test(user.email);
 
   const time = new Date();
   const year = time.getFullYear();
   const month = time.getMonth();
   const day = time.getDate();
-  const userBirthDate = birthDate;
-  const [userBirthDateYear, userBirthDateMonth, userBirthDateDay] =
-    userBirthDate.split("-").map(Number);
-  const ageInYears =
-    year -
-    userBirthDateYear -
-    (month < userBirthDateMonth ||
-      (month === userBirthDateMonth && day < userBirthDateDay)
-      ? 1
-      : 0);
+  const userBirthDate = user?.birth_date;
+  let ageInYears;
+  // if (user?.birth_date != "") {
+  //   const [userBirthDateYear, userBirthDateMonth, userBirthDateDay] =
+  //     userBirthDate?.split("-")?.map(Number);
+  //   ageInYears =
+  //     year -
+  //     userBirthDateYear -
+  //     (month < userBirthDateMonth ||
+  //     (month === userBirthDateMonth && day < userBirthDateDay)
+  //       ? 1
+  //       : 0);
+  // }
 
   const [isUsernameAvailable, setIsUsernameAvailable] = useState(false);
 
+  console.log(user);
+
+  const handleUpdateValue = (e) => {
+    setUser((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
   const checkUsername = async (username) => {
     try {
-      const response = await instance.get(
-        `/auth/username/${username}`
-      );
+      const response = await instance.get(`/auth/username/${username}`);
       const data = response.data;
       const isAvailable = data?.is_available;
       if (isAvailable) {
@@ -71,56 +68,49 @@ function RegisterPage() {
   };
 
   useEffect(() => {
-    if (username !== "") {
+    if (user?.username !== "") {
       setTimeout(() => {
-        checkUsername(username);
+        checkUsername(user?.username);
       }, 2000);
     }
-  }, [username]);
+  }, [user?.username]);
 
-
+  // # Validation
   const handleNextStep = async () => {
     if (currentFormPage === 3) {
       setIsLoading(true);
-      let nullCount = 0;
-      for (let i = 0; i < images.length; i++) {
-        if (images[i] === null) {
-          nullCount = nullCount + 1;
+      let countNullPhoto = 0;
+      for (let i = 0; i < user?.photos?.length; i++) {
+        const photo = user?.photos[i];
+        if (photo === null) {
+          countNullPhoto = countNullPhoto + 1;
         }
       }
-      if (nullCount >= 4) {
-        alert("Please upload at least two photos");
-      } else {
-        let newFormData = {
-          username: username,
-          password: password,
-          name: name,
-          birth_date: birthDate,
-          location: location,
-          city: city,
-          email: email,
-          sexual_identity: sexualIdentity,
-          sexual_preference: sexualPreference,
-          racial_preference: racialPreference,
-          meeting_interest: meetingInterest,
-          hobbies: hobbyLists,
-          images: images,
-        };
-        await register(newFormData);
+      if (countNullPhoto >= 4) {
         toast({
-          title: "Account created.",
-          description: "Your account has been created.",
-          status: "success",
-          duration: 3000,
+          title: "Please upload at least 2 photos.",
+          status: "info",
+          duration: 5000,
           isClosable: true,
           position: "top",
         });
-        navigate("/login");
+        setIsLoading(false);
+      } else {
+        await register(user);
+        // toast({
+        //   title: "Account created.",
+        //   description: "Your account has been created.",
+        //   status: "success",
+        //   duration: 3000,
+        //   isClosable: true,
+        //   position: "top",
+        // });
+        // navigate("/login");
 
         setIsLoading(false);
       }
     } else {
-      if (!username) {
+      if (!user?.username) {
         toast({
           title: "Username.",
           description: "Please enter username.",
@@ -129,7 +119,7 @@ function RegisterPage() {
           isClosable: true,
           position: "top",
         });
-      } else if (!name) {
+      } else if (!user?.name) {
         toast({
           title: "Name.",
           description: "Please enter name.",
@@ -138,7 +128,7 @@ function RegisterPage() {
           isClosable: true,
           position: "top",
         });
-      } else if (username.length < 6) {
+      } else if (user?.username.length < 6) {
         toast({
           title: "Username.",
           description: "Please enter at least 6 characters.",
@@ -156,7 +146,7 @@ function RegisterPage() {
           isClosable: true,
           position: "top",
         });
-      } else if (!email || !isValidEmail) {
+      } else if (!user?.email || !isValidEmail) {
         toast({
           title: "Email.",
           description: "Please provide a valid email address.",
@@ -165,7 +155,7 @@ function RegisterPage() {
           isClosable: true,
           position: "top",
         });
-      } else if (!password) {
+      } else if (!user?.password) {
         toast({
           title: "Email.",
           description: "Please enter password.",
@@ -174,7 +164,7 @@ function RegisterPage() {
           isClosable: true,
           position: "top",
         });
-      } else if (password.length < 8) {
+      } else if (user?.password.length < 8) {
         toast({
           title: "Password.",
           description: "Please enter at least 8 characters.",
@@ -183,7 +173,7 @@ function RegisterPage() {
           isClosable: true,
           position: "top",
         });
-      } else if (password !== confirmPassword) {
+      } else if (user?.password !== user?.confirm_password) {
         toast({
           title: "Password.",
           description: "Passwords do not match.",
@@ -228,17 +218,21 @@ function RegisterPage() {
             </h2>
           </div>
           <div
-            className={`tabs-container rounded-2xl tabs-container flex w-1/2 h-full justify-items-center items-center ${currentFormPage === 2 ? "gap-6" : "gap-4"
-              }`}
+            className={`tabs-container rounded-2xl tabs-container flex w-1/2 h-full justify-items-center items-center ${
+              currentFormPage === 2 ? "gap-6" : "gap-4"
+            }`}
           >
             <div
-              className={`border-4 border-[#E4E6ED] px-[16px] ${currentFormPage === 1 ? "w-auto" : "w-[80px]"
-                } h-[80px] rounded-[16px] flex justify-evenly items-center transition duration-300  transform ${currentFormPage === 1 ? "scale-110" : ""
-                } ${currentFormPage !== 1 ? "scale-100" : ""}`}
+              className={`border-4 border-[#E4E6ED] px-[16px] ${
+                currentFormPage === 1 ? "w-auto" : "w-[80px]"
+              } h-[80px] rounded-[16px] flex justify-evenly items-center transition duration-300  transform ${
+                currentFormPage === 1 ? "scale-110" : ""
+              } ${currentFormPage !== 1 ? "scale-100" : ""}`}
             >
               <div
-                className={`w-[48px] h-[48px] rounded-[16px] bg-[#F1F2F6] flex flex-row justify-center items-center font-bold text-[24px] ${currentFormPage === 1 ? "text-[#A62D82]" : "text-[#9AA1B9]"
-                  }`}
+                className={`w-[48px] h-[48px] rounded-[16px] bg-[#F1F2F6] flex flex-row justify-center items-center font-bold text-[24px] ${
+                  currentFormPage === 1 ? "text-[#A62D82]" : "text-[#9AA1B9]"
+                }`}
               >
                 1
               </div>
@@ -252,13 +246,16 @@ function RegisterPage() {
               </div>
             </div>
             <div
-              className={`border-4 border-[#E4E6ED] px-[16px] ${currentFormPage === 2 ? "w-auto " : "w-[80px]"
-                } h-[80px] rounded-[16px] flex justify-evenly items-center transition duration-300  transform ${currentFormPage === 2 ? "scale-110" : ""
-                } ${currentFormPage !== 2 ? "scale-100" : ""}`}
+              className={`border-4 border-[#E4E6ED] px-[16px] ${
+                currentFormPage === 2 ? "w-auto " : "w-[80px]"
+              } h-[80px] rounded-[16px] flex justify-evenly items-center transition duration-300  transform ${
+                currentFormPage === 2 ? "scale-110" : ""
+              } ${currentFormPage !== 2 ? "scale-100" : ""}`}
             >
               <div
-                className={`w-[48px] h-[48px] rounded-[16px] bg-[#F1F2F6] flex flex-row justify-center items-center font-bold text-[24px] ${currentFormPage === 2 ? "text-[#A62D82]" : "text-[#9AA1B9]"
-                  }`}
+                className={`w-[48px] h-[48px] rounded-[16px] bg-[#F1F2F6] flex flex-row justify-center items-center font-bold text-[24px] ${
+                  currentFormPage === 2 ? "text-[#A62D82]" : "text-[#9AA1B9]"
+                }`}
               >
                 2
               </div>
@@ -272,13 +269,16 @@ function RegisterPage() {
               </div>
             </div>
             <div
-              className={`border-4 border-[#E4E6ED] w-[80px] h-[80px] rounded-[16px] flex flex-row justify-center items-center ${currentFormPage === 3 ? "w-auto px-3" : "w-[80px]"
-                } transition duration-300  transform ${currentFormPage === 3 ? "scale-110" : ""
-                } ${currentFormPage !== 3 ? "scale-100" : ""}`}
+              className={`border-4 border-[#E4E6ED] w-[80px] h-[80px] rounded-[16px] flex flex-row justify-center items-center ${
+                currentFormPage === 3 ? "w-auto px-3" : "w-[80px]"
+              } transition duration-300  transform ${
+                currentFormPage === 3 ? "scale-110" : ""
+              } ${currentFormPage !== 3 ? "scale-100" : ""}`}
             >
               <div
-                className={`w-[48px] h-[48px] rounded-[16px] bg-[#F1F2F6] flex flex-row items-center  justify-center text-[#9AA1B9] font-bold text-[24px] ${currentFormPage === 3 ? "text-[#A62D82]" : "text-[#9AA1B9]"
-                  }`}
+                className={`w-[48px] h-[48px] rounded-[16px] bg-[#F1F2F6] flex flex-row items-center  justify-center text-[#9AA1B9] font-bold text-[24px] ${
+                  currentFormPage === 3 ? "text-[#A62D82]" : "text-[#9AA1B9]"
+                }`}
               >
                 3
               </div>
@@ -297,42 +297,24 @@ function RegisterPage() {
         {/* <form onSubmit={handleSubmit}> */}
         {currentFormPage === 1 && (
           <RegisterForm1
-            name={name}
-            setName={setName}
-            birthDate={birthDate}
-            setBirthDate={setBirthDate}
-            location={location}
-            setLocation={setLocation}
-            city={city}
-            setCity={setCity}
-            username={username}
-            setUsername={setUsername}
-            password={password}
-            setPassword={setPassword}
-            confirmPassword={confirmPassword}
-            setConfirmPassword={setConfirmPassword}
-            email={email}
-            setEmail={setEmail}
+            user={user}
+            setUser={setUser}
+            handleUpdateValue={handleUpdateValue}
           />
         )}
         {currentFormPage === 2 && (
           <RegisterForm2
-            sexualIdentity={sexualIdentity}
-            setSexualIdentity={setSexualIdentity}
-            sexualPreference={sexualPreference}
-            setSexualPreference={setSexualPreference}
-            racialPreference={racialPreference}
-            setRacialPreference={setRacialPreference}
-            meetingInterest={meetingInterest}
-            setMeetingInterest={setMeetingInterest}
-            hobbyLists={hobbyLists}
-            setHobbyLists={setHobbyLists}
-            info={info}
-            setInfo={setInfo}
+            user={user}
+            setUser={setUser}
+            handleUpdateValue={handleUpdateValue}
           />
         )}
         {currentFormPage === 3 && (
-          <RegisterForm3 images={images} setImages={setImages} />
+          <RegisterForm3
+            user={user}
+            setUser={setUser}
+            handleUpdateValue={handleUpdateValue}
+          />
         )}
         {/* </form> */}
 

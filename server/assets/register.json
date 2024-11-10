@@ -1,0 +1,33 @@
+{
+  "body": {
+    "name": "name_test_2",
+    "username": "username_test_2",
+    "password": "password",
+    "birth_date": "1999-01-03",
+    "location": "Thailand",
+    "city": "Bangkok",
+    "email": "username_test_2@email.com",
+    "sexual_identity": "Male",
+    "sexual_preference": "Female",
+    "racial_preference": "Asian",
+    "meeting_interest": "Partners",
+    "hobbies": ["1", "2", "3", "4"],
+    "photos": [
+      {
+        "path": "blob:http://localhost:30002/be6be95d-b534-45d6-911d-cc6d78d5ac26"
+      },
+      {
+        "path": null
+      },
+      {
+        "path": null
+      },
+      {
+        "path": null
+      },
+      {
+        "path": null
+      }
+    ]
+  }
+}

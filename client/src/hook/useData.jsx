@@ -35,6 +35,10 @@ const useData = () => {
   };
 
   const updateUserProfile = async (userId, data, files) => {
+    console.log(userId);
+    console.log(data);
+    console.log(files);
+    
     try {
       const formData = new FormData();
       formData.append("body", JSON.stringify(data));

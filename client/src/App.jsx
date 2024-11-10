@@ -30,7 +30,6 @@ function App() {
       const token = localStorage.getItem("token");
 
       if (!isTokenValid(token)) {
-        alert("Your session has expired. Please log in again.");
         setTokenValid(false);
         auth.logout();
         navigate("/login");
